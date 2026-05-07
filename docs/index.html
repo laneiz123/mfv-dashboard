@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>MyfunnyValentine 영업이익 대시보드</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", sans-serif; background: #f5f7fa; color: #2c3e50; padding: 24px; }
+  .header { max-width: 1280px; margin: 0 auto 16px; display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; }
+  .header h1 { font-size: 28px; font-weight: 700; }
+  .meta { font-size: 13px; color: #95a5a6; }
+  .container { max-width: 1280px; margin: 0 auto; display: grid; gap: 16px; }
+  .row { display: grid; gap: 16px; }
+  .row.kpis { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+  .row.charts-2col { grid-template-columns: 2fr 1fr; }
+  @media (max-width: 800px) { .row.charts-2col { grid-template-columns: 1fr; } }
+  .card { background: #fff; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .card h3 { font-size: 13px; color: #95a5a6; font-weight: 500; margin-bottom: 8px; letter-spacing: -0.2px; }
+  .card .v { font-size: 24px; font-weight: 700; }
+  .card .sub { font-size: 12px; color: #95a5a6; margin-top: 4px; }
+  .card.op .v { color: #27ae60; }
+  .card.cost .v { color: #e74c3c; }
+  .chart-card h2 { font-size: 14px; color: #2c3e50; font-weight: 600; margin-bottom: 12px; }
+  .chart-wrap { position: relative; height: 280px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 8px 10px; text-align: right; border-bottom: 1px solid #ecf0f1; }
+  th { font-weight: 500; color: #95a5a6; background: #f8f9fa; text-align: right; }
+  th:first-child, td:first-child { text-align: left; }
+  td.pct { color: #95a5a6; font-size: 12px; }
+  .footer { text-align: center; color: #95a5a6; font-size: 11px; margin-top: 24px; }
+  /* Raw data */
+  .rawdata-scroll { overflow-x: auto; max-width: 100%; }
+  .rawdata-table { font-size: 11px; min-width: 100%; }
+  .rawdata-table th, .rawdata-table td { padding: 4px 8px; white-space: nowrap; text-align: right; border-bottom: 1px solid #ecf0f1; }
+  .rawdata-table th.lbl, .rawdata-table td.lbl { text-align: left; position: sticky; left: 0; background: #fff; z-index: 1; min-width: 110px; }
+  .rawdata-table tr.ch-header th { text-align: left; background: #D9E1F2; color: #2c3e50; font-size: 13px; padding: 8px; }
+  .rawdata-table tr.date-row th { background: #f8f9fa; color: #95a5a6; font-weight: 500; font-size: 10px; padding: 4px 8px; }
+  .rawdata-table td.total { background: #FFF8E1; font-weight: 600; }
+  .rawdata-table th.total { background: #FFE699; }
+  .rawdata-table td.empty { color: #d0d0d0; }
+  .rawdata-table td.neg { color: #c0392b; }
+  .rawdata-table td.pos { color: #27ae60; }
+  /* Big month tabs */
+  .month-tabs-big { max-width: 1280px; margin: 0 auto 16px; display: flex; gap: 8px; flex-wrap: wrap; background: #fff; padding: 8px; border-radius: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .month-tab-big { flex: 1; min-width: 100px; background: transparent; border: none; padding: 14px 22px; font-size: 16px; color: #7f8c8d; cursor: pointer; border-radius: 10px; font-weight: 600; transition: all 0.15s; }
+  .month-tab-big:hover { background: #f8f9fa; color: #2c3e50; }
+  .month-tab-big.active { background: #2980b9; color: #fff; box-shadow: 0 2px 6px rgba(41, 128, 185, 0.35); }
+  .month-panel-big { display: none; }
+  .month-panel-big.active { display: grid; gap: 16px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>MyfunnyValentine 영업이익 대시보드</h1>
+  <span class="meta">2026-04-01 ~ 2026-05-07 · 생성 2026-05-07 17:32</span>
+</div>
+
+<div class="month-tabs-big"><button class="month-tab-big" data-month="2026-04" onclick="selectMonth(this, '2026-04')">4월</button><button class="month-tab-big active" data-month="2026-05" onclick="selectMonth(this, '2026-05')">5월</button><button class="month-tab-big" data-month="all" onclick="selectMonth(this, 'all')">전체</button></div>
+
+<div class="container">
+<div class="month-panel-big" id="panel-2026-04">
+  <div class="row kpis">
+    <div class="card"><h3>매출</h3><div class="v">2,049,220원</div><div class="sub">94건</div></div>
+    <div class="card cost"><h3>매출원가</h3><div class="v">−486,709</div><div class="sub">23.8% 비중</div></div>
+    <div class="card cost"><h3>채널 수수료</h3><div class="v">−396,399</div><div class="sub">19.3% 비중</div></div>
+    <div class="card cost"><h3>광고비</h3><div class="v">−147,813</div><div class="sub">메타 359,140 + 오하우스 0</div></div>
+    <div class="card op"><h3>영업이익</h3><div class="v">1,018,299원</div><div class="sub">49.7% 마진</div></div>
+  </div>
+
+  <div class="row charts-2col">
+    <div class="card chart-card">
+      <h2>일별 영업이익 추이 (채널별 누적)</h2>
+      <div class="chart-wrap"><canvas id="dailyChart-2026-04"></canvas></div>
+    </div>
+    <div class="card chart-card">
+      <h2>채널별 매출 비중</h2>
+      <div class="chart-wrap"><canvas id="channelDoughnut-2026-04"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card chart-card">
+    <h2>채널별 손익 분해</h2>
+    <table>
+      <thead>
+        <tr><th>채널</th><th>건수</th><th>매출</th><th>매출원가</th><th>수수료</th><th>광고비</th><th>영업이익</th><th>마진</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>오늘의집</td>
+          <td>79</td>
+          <td>1,762,200</td>
+          <td>420,646</td>
+          <td>382,410</td>
+          <td>0</td>
+          <td><b>959,144</b></td>
+          <td class="pct">54.4%</td>
+        </tr>
+        <tr>
+          <td>자사몰</td>
+          <td>6</td>
+          <td>118,420</td>
+          <td>25,184</td>
+          <td>4,146</td>
+          <td>122,642</td>
+          <td><b>-33,552</b></td>
+          <td class="pct">-28.3%</td>
+        </tr>
+        <tr>
+          <td>스마트스토어</td>
+          <td>6</td>
+          <td>108,800</td>
+          <td>30,436</td>
+          <td>6,310</td>
+          <td>0</td>
+          <td><b>72,054</b></td>
+          <td class="pct">66.2%</td>
+        </tr>
+        <tr>
+          <td>지그재그</td>
+          <td>2</td>
+          <td>36,000</td>
+          <td>3,570</td>
+          <td>2,700</td>
+          <td>0</td>
+          <td><b>29,730</b></td>
+          <td class="pct">82.6%</td>
+        </tr>
+        <tr>
+          <td>기타</td>
+          <td>1</td>
+          <td>23,800</td>
+          <td>6,873</td>
+          <td>833</td>
+          <td>25,171</td>
+          <td><b>-9,077</b></td>
+          <td class="pct">-38.1%</td>
+        </tr>
+        <tr style="background:#f8f9fa;font-weight:700;">
+          <td>합계</td>
+          <td>94</td>
+          <td>2,049,220</td>
+          <td>486,709</td>
+          <td>396,399</td>
+          <td>147,813</td>
+          <td>1,018,299</td>
+          <td>49.7%</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card chart-card rawdata">
+    <h2>📋 Raw Data — 채널별 일별 상세</h2>
+    <div class="rawdata-scroll">
+      <table class="rawdata-table">
+<tr class="ch-header"><th colspan="26">▌ 자사몰</th></tr><tr class="date-row"><th class="lbl">항목</th><th>04/30</th><th>04/29</th><th>04/28</th><th>04/27</th><th>04/26</th><th>04/25</th><th>04/24</th><th>04/23</th><th>04/22</th><th>04/21</th><th>04/20</th><th>04/19</th><th>04/18</th><th>04/17</th><th>04/15</th><th>04/14</th><th>04/13</th><th>04/12</th><th>04/11</th><th>04/10</th><th>04/09</th><th>04/08</th><th>04/07</th><th>04/06</th><th class="total">합계</th></tr><tr><td class="lbl">매출</td><td class="">54,460</td><td class="empty"></td><td class="">29,960</td><td class="empty"></td><td class="">16,000</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">23,800</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">18,000</td><td class="empty"></td><td class="total "><b>142,220</b></td></tr><tr><td class="lbl">매출원가</td><td class="">13,636</td><td class="empty"></td><td class="">6,763</td><td class="empty"></td><td class="">3,000</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">6,873</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">1,785</td><td class="empty"></td><td class="total "><b>32,057</b></td></tr><tr><td class="lbl">채널 수수료</td><td class="">1,907</td><td class="empty"></td><td class="">1,049</td><td class="empty"></td><td class="">560</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">833</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">630</td><td class="empty"></td><td class="total "><b>4,979</b></td></tr><tr><td class="lbl">광고비 (메타)</td><td class="">28,289</td><td class="">31,774</td><td class="">41,815</td><td class="">24,685</td><td class="empty"></td><td class="">2,008</td><td class="">4,535</td><td class="">4,416</td><td class="">4,735</td><td class="">4,562</td><td class="">4,456</td><td class="">5,373</td><td class="">4,735</td><td class="">4,961</td><td class="">4,190</td><td class="">4,083</td><td class="">5,014</td><td class="">5,094</td><td class="">4,456</td><td class="">4,535</td><td class="">4,841</td><td class="">4,682</td><td class="">4,389</td><td class="">4,322</td><td class="total "><b>211,950</b></td></tr><tr><td class="lbl">ROAS</td><td>1.93배</td><td class="empty"></td><td>0.72배</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td>4.43배</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td>4.10배</td><td class="empty"></td><td class="total"><b>0.67배</b></td></tr><tr><td class="lbl">영업이익</td><td class="pos">10,628</td><td class="neg">-31,774</td><td class="neg">-19,667</td><td class="neg">-24,685</td><td class="pos">12,440</td><td class="neg">-2,008</td><td class="neg">-4,535</td><td class="neg">-4,416</td><td class="neg">-4,735</td><td class="neg">-4,562</td><td class="neg">-4,456</td><td class="pos">10,721</td><td class="neg">-4,735</td><td class="neg">-4,961</td><td class="neg">-4,190</td><td class="neg">-4,083</td><td class="neg">-5,014</td><td class="neg">-5,094</td><td class="neg">-4,456</td><td class="neg">-4,535</td><td class="neg">-4,841</td><td class="neg">-4,682</td><td class="pos">11,196</td><td class="neg">-4,322</td><td class="total neg"><b>-106,766</b></td></tr><tr><td class="lbl">마진율</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total"><b>-75.1%</b></td></tr><tr><td class="lbl">주문건수</td><td class="">2</td><td class="empty"></td><td class="">1</td><td class="empty"></td><td class="">2</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">1</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">1</td><td class="empty"></td><td class="total "><b>7</b></td></tr><tr class="ch-header"><th colspan="26">▌ 오늘의집</th></tr><tr class="date-row"><th class="lbl">항목</th><th>04/30</th><th>04/29</th><th>04/28</th><th>04/27</th><th>04/26</th><th>04/25</th><th>04/24</th><th>04/23</th><th>04/22</th><th>04/21</th><th>04/20</th><th>04/19</th><th>04/18</th><th>04/17</th><th>04/15</th><th>04/14</th><th>04/13</th><th>04/12</th><th>04/11</th><th>04/10</th><th>04/09</th><th>04/08</th><th>04/07</th><th>04/06</th><th class="total">합계</th></tr><tr><td class="lbl">매출</td><td class="">29,100</td><td class="">53,200</td><td class="">122,600</td><td class="">131,500</td><td class="">29,400</td><td class="">29,400</td><td class="">31,800</td><td class="">37,400</td><td class="">61,200</td><td class="">58,800</td><td class="">82,600</td><td class="">47,600</td><td class="">29,400</td><td class="">29,400</td><td class="">112,000</td><td class="">66,800</td><td class="">37,400</td><td class="">69,200</td><td class="">138,400</td><td class="">31,800</td><td class="">74,800</td><td class="">143,800</td><td class="">149,400</td><td class="">165,200</td><td class="total "><b>1,762,200</b></td></tr><tr><td class="lbl">매출원가</td><td class="">6,763</td><td class="">13,636</td><td class="">27,899</td><td class="">28,837</td><td class="">6,763</td><td class="">6,763</td><td class="">8,373</td><td class="">8,263</td><td class="">15,136</td><td class="">13,526</td><td class="">20,399</td><td class="">13,746</td><td class="">6,763</td><td class="">6,763</td><td class="">27,162</td><td class="">15,026</td><td class="">8,263</td><td class="">16,636</td><td class="">33,272</td><td class="">8,373</td><td class="">16,526</td><td class="">35,535</td><td class="">35,425</td><td class="">40,798</td><td class="total "><b>420,646</b></td></tr><tr><td class="lbl">채널 수수료</td><td class="">6,315</td><td class="">11,545</td><td class="">26,605</td><td class="">28,536</td><td class="">6,380</td><td class="">6,380</td><td class="">6,901</td><td class="">8,116</td><td class="">13,281</td><td class="">12,760</td><td class="">17,925</td><td class="">10,329</td><td class="">6,380</td><td class="">6,380</td><td class="">24,305</td><td class="">14,496</td><td class="">8,116</td><td class="">15,017</td><td class="">30,034</td><td class="">6,901</td><td class="">16,232</td><td class="">31,205</td><td class="">32,421</td><td class="">35,850</td><td class="total "><b>382,410</b></td></tr><tr><td class="lbl">광고비 (오하우스)</td><td class="">3,674</td><td class="">1,848</td><td class="">2,717</td><td class="">2,222</td><td class="">4,422</td><td class="">3,784</td><td class="">2,266</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total "><b>20,933</b></td></tr><tr><td class="lbl">ROAS</td><td>7.92배</td><td>28.79배</td><td>45.12배</td><td>59.18배</td><td>6.65배</td><td>7.77배</td><td>14.03배</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total"><b>84.18배</b></td></tr><tr><td class="lbl">영업이익</td><td class="pos">12,348</td><td class="pos">26,171</td><td class="pos">65,379</td><td class="pos">71,905</td><td class="pos">11,835</td><td class="pos">12,473</td><td class="pos">14,260</td><td class="pos">21,021</td><td class="pos">32,783</td><td class="pos">32,514</td><td class="pos">44,276</td><td class="pos">23,525</td><td class="pos">16,257</td><td class="pos">16,257</td><td class="pos">60,533</td><td class="pos">37,278</td><td class="pos">21,021</td><td class="pos">37,547</td><td class="pos">75,094</td><td class="pos">16,526</td><td class="pos">42,042</td><td class="pos">77,060</td><td class="pos">81,554</td><td class="pos">88,552</td><td class="total pos"><b>938,211</b></td></tr><tr><td class="lbl">마진율</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total"><b>53.2%</b></td></tr><tr><td class="lbl">주문건수</td><td class="">1</td><td class="">2</td><td class="">8</td><td class="">5</td><td class="">1</td><td class="">1</td><td class="">2</td><td class="">2</td><td class="">3</td><td class="">2</td><td class="">3</td><td class="">2</td><td class="">1</td><td class="">1</td><td class="">4</td><td class="">3</td><td class="">2</td><td class="">4</td><td class="">8</td><td class="">2</td><td class="">4</td><td class="">6</td><td class="">6</td><td class="">6</td><td class="total "><b>79</b></td></tr><tr class="ch-header"><th colspan="26">▌ 스마트스토어</th></tr><tr class="date-row"><th class="lbl">항목</th><th>04/30</th><th>04/29</th><th>04/28</th><th>04/27</th><th>04/26</th><th>04/25</th><th>04/24</th><th>04/23</th><th>04/22</th><th>04/21</th><th>04/20</th><th>04/19</th><th>04/18</th><th>04/17</th><th>04/15</th><th>04/14</th><th>04/13</th><th>04/12</th><th>04/11</th><th>04/10</th><th>04/09</th><th>04/08</th><th>04/07</th><th>04/06</th><th class="total">합계</th></tr><tr><td class="lbl">매출</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">53,200</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">55,600</td><td class="total "><b>108,800</b></td></tr><tr><td class="lbl">매출원가</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">13,636</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">16,800</td><td class="total "><b>30,436</b></td></tr><tr><td class="lbl">채널 수수료</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">3,085</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">3,225</td><td class="total "><b>6,310</b></td></tr><tr><td class="lbl">광고비</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total "><b>0</b></td></tr><tr><td class="lbl">ROAS</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total empty"></td></tr><tr><td class="lbl">영업이익</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="pos">36,479</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="pos">35,575</td><td class="total pos"><b>72,054</b></td></tr><tr><td class="lbl">마진율</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total"><b>66.2%</b></td></tr><tr><td class="lbl">주문건수</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">2</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">4</td><td class="total "><b>6</b></td></tr><tr class="ch-header"><th colspan="26">▌ 지그재그</th></tr><tr class="date-row"><th class="lbl">항목</th><th>04/30</th><th>04/29</th><th>04/28</th><th>04/27</th><th>04/26</th><th>04/25</th><th>04/24</th><th>04/23</th><th>04/22</th><th>04/21</th><th>04/20</th><th>04/19</th><th>04/18</th><th>04/17</th><th>04/15</th><th>04/14</th><th>04/13</th><th>04/12</th><th>04/11</th><th>04/10</th><th>04/09</th><th>04/08</th><th>04/07</th><th>04/06</th><th class="total">합계</th></tr><tr><td class="lbl">매출</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">18,000</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">18,000</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total "><b>36,000</b></td></tr><tr><td class="lbl">매출원가</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">1,785</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">1,785</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total "><b>3,570</b></td></tr><tr><td class="lbl">채널 수수료</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">1,350</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">1,350</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total "><b>2,700</b></td></tr><tr><td class="lbl">광고비</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total "><b>0</b></td></tr><tr><td class="lbl">ROAS</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total empty"></td></tr><tr><td class="lbl">영업이익</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="pos">14,865</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="pos">14,865</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total pos"><b>29,730</b></td></tr><tr><td class="lbl">마진율</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total"><b>82.6%</b></td></tr><tr><td class="lbl">주문건수</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">1</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">1</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total "><b>2</b></td></tr>
+      </table>
+    </div>
+  </div>
+</div><div class="month-panel-big active" id="panel-2026-05">
+  <div class="row kpis">
+    <div class="card"><h3>매출</h3><div class="v">731,100원</div><div class="sub">29건</div></div>
+    <div class="card cost"><h3>매출원가</h3><div class="v">−170,142</div><div class="sub">23.3% 비중</div></div>
+    <div class="card cost"><h3>채널 수수료</h3><div class="v">−101,041</div><div class="sub">13.8% 비중</div></div>
+    <div class="card cost"><h3>광고비</h3><div class="v">−255,535</div><div class="sub">메타 359,140 + 오하우스 0</div></div>
+    <div class="card op"><h3>영업이익</h3><div class="v">204,382원</div><div class="sub">28.0% 마진</div></div>
+  </div>
+
+  <div class="row charts-2col">
+    <div class="card chart-card">
+      <h2>일별 영업이익 추이 (채널별 누적)</h2>
+      <div class="chart-wrap"><canvas id="dailyChart-2026-05"></canvas></div>
+    </div>
+    <div class="card chart-card">
+      <h2>채널별 매출 비중</h2>
+      <div class="chart-wrap"><canvas id="channelDoughnut-2026-05"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card chart-card">
+    <h2>채널별 손익 분해</h2>
+    <table>
+      <thead>
+        <tr><th>채널</th><th>건수</th><th>매출</th><th>매출원가</th><th>수수료</th><th>광고비</th><th>영업이익</th><th>마진</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>오늘의집</td>
+          <td>17</td>
+          <td>415,500</td>
+          <td>99,512</td>
+          <td>90,167</td>
+          <td>0</td>
+          <td><b>225,821</b></td>
+          <td class="pct">54.3%</td>
+        </tr>
+        <tr>
+          <td>자사몰</td>
+          <td>7</td>
+          <td>209,720</td>
+          <td>47,341</td>
+          <td>7,343</td>
+          <td>216,371</td>
+          <td><b>-61,335</b></td>
+          <td class="pct">-29.2%</td>
+        </tr>
+        <tr>
+          <td>스마트스토어</td>
+          <td>2</td>
+          <td>37,960</td>
+          <td>8,263</td>
+          <td>2,202</td>
+          <td>0</td>
+          <td><b>27,495</b></td>
+          <td class="pct">72.4%</td>
+        </tr>
+        <tr>
+          <td>기타</td>
+          <td>2</td>
+          <td>37,960</td>
+          <td>8,263</td>
+          <td>1,329</td>
+          <td>39,164</td>
+          <td><b>-10,796</b></td>
+          <td class="pct">-28.4%</td>
+        </tr>
+        <tr>
+          <td>기타</td>
+          <td>1</td>
+          <td>29,960</td>
+          <td>6,763</td>
+          <td>0</td>
+          <td>0</td>
+          <td><b>23,197</b></td>
+          <td class="pct">77.4%</td>
+        </tr>
+        <tr style="background:#f8f9fa;font-weight:700;">
+          <td>합계</td>
+          <td>29</td>
+          <td>731,100</td>
+          <td>170,142</td>
+          <td>101,041</td>
+          <td>255,535</td>
+          <td>204,382</td>
+          <td>28.0%</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card chart-card rawdata">
+    <h2>📋 Raw Data — 채널별 일별 상세</h2>
+    <div class="rawdata-scroll">
+      <table class="rawdata-table">
+<tr class="ch-header"><th colspan="9">▌ 자사몰</th></tr><tr class="date-row"><th class="lbl">항목</th><th>05/07</th><th>05/06</th><th>05/05</th><th>05/04</th><th>05/03</th><th>05/02</th><th>05/01</th><th class="total">합계</th></tr><tr><td class="lbl">매출</td><td class="empty"></td><td class="">37,960</td><td class="">29,960</td><td class="">29,960</td><td class="">89,880</td><td class="">89,880</td><td class="empty"></td><td class="total "><b>277,640</b></td></tr><tr><td class="lbl">매출원가</td><td class="empty"></td><td class="">8,263</td><td class="">6,763</td><td class="">6,763</td><td class="">20,289</td><td class="">20,289</td><td class="empty"></td><td class="total "><b>62,367</b></td></tr><tr><td class="lbl">채널 수수료</td><td class="empty"></td><td class="">1,329</td><td class="">1,049</td><td class="empty"></td><td class="">3,147</td><td class="">3,147</td><td class="empty"></td><td class="total "><b>8,672</b></td></tr><tr><td class="lbl">광고비 (메타)</td><td class="">25,283</td><td class="">27,651</td><td class="">35,564</td><td class="">30,843</td><td class="">41,257</td><td class="">26,733</td><td class="">34,287</td><td class="total "><b>221,618</b></td></tr><tr><td class="lbl">ROAS</td><td class="empty"></td><td>1.37배</td><td>0.84배</td><td>0.97배</td><td>2.18배</td><td>3.36배</td><td class="empty"></td><td class="total"><b>1.25배</b></td></tr><tr><td class="lbl">영업이익</td><td class="neg">-25,283</td><td class="pos">717</td><td class="neg">-13,416</td><td class="neg">-7,646</td><td class="pos">25,187</td><td class="pos">39,711</td><td class="neg">-34,287</td><td class="total neg"><b>-15,017</b></td></tr><tr><td class="lbl">마진율</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total"><b>-5.4%</b></td></tr><tr><td class="lbl">주문건수</td><td class="empty"></td><td class="">2</td><td class="">1</td><td class="">1</td><td class="">3</td><td class="">3</td><td class="empty"></td><td class="total "><b>10</b></td></tr><tr class="ch-header"><th colspan="9">▌ 오늘의집</th></tr><tr class="date-row"><th class="lbl">항목</th><th>05/07</th><th>05/06</th><th>05/05</th><th>05/04</th><th>05/03</th><th>05/02</th><th>05/01</th><th class="total">합계</th></tr><tr><td class="lbl">매출</td><td class="">58,200</td><td class="">52,900</td><td class="">37,100</td><td class="">95,300</td><td class="">58,200</td><td class="">60,900</td><td class="">52,900</td><td class="total "><b>415,500</b></td></tr><tr><td class="lbl">매출원가</td><td class="">13,526</td><td class="">13,636</td><td class="">8,263</td><td class="">21,789</td><td class="">13,526</td><td class="">15,136</td><td class="">13,636</td><td class="total "><b>99,512</b></td></tr><tr><td class="lbl">채널 수수료</td><td class="">12,630</td><td class="">11,480</td><td class="">8,051</td><td class="">20,681</td><td class="">12,629</td><td class="">13,216</td><td class="">11,480</td><td class="total "><b>90,167</b></td></tr><tr><td class="lbl">광고비 (오하우스)</td><td class="empty"></td><td class="">7,370</td><td class="">825</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">2,761</td><td class="total "><b>10,956</b></td></tr><tr><td class="lbl">ROAS</td><td class="empty"></td><td>7.18배</td><td>44.97배</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td>19.16배</td><td class="total"><b>37.92배</b></td></tr><tr><td class="lbl">영업이익</td><td class="pos">32,044</td><td class="pos">20,414</td><td class="pos">19,961</td><td class="pos">52,830</td><td class="pos">32,045</td><td class="pos">32,548</td><td class="pos">25,023</td><td class="total pos"><b>214,865</b></td></tr><tr><td class="lbl">마진율</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total"><b>51.7%</b></td></tr><tr><td class="lbl">주문건수</td><td class="">2</td><td class="">2</td><td class="">2</td><td class="">4</td><td class="">2</td><td class="">3</td><td class="">2</td><td class="total "><b>17</b></td></tr><tr class="ch-header"><th colspan="9">▌ 스마트스토어</th></tr><tr class="date-row"><th class="lbl">항목</th><th>05/07</th><th>05/06</th><th>05/05</th><th>05/04</th><th>05/03</th><th>05/02</th><th>05/01</th><th class="total">합계</th></tr><tr><td class="lbl">매출</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">37,960</td><td class="empty"></td><td class="empty"></td><td class="total "><b>37,960</b></td></tr><tr><td class="lbl">매출원가</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">8,263</td><td class="empty"></td><td class="empty"></td><td class="total "><b>8,263</b></td></tr><tr><td class="lbl">채널 수수료</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">2,202</td><td class="empty"></td><td class="empty"></td><td class="total "><b>2,202</b></td></tr><tr><td class="lbl">광고비</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total "><b>0</b></td></tr><tr><td class="lbl">ROAS</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total empty"></td></tr><tr><td class="lbl">영업이익</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="pos">27,495</td><td class="empty"></td><td class="empty"></td><td class="total pos"><b>27,495</b></td></tr><tr><td class="lbl">마진율</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total"><b>72.4%</b></td></tr><tr><td class="lbl">주문건수</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">2</td><td class="empty"></td><td class="empty"></td><td class="total "><b>2</b></td></tr>
+      </table>
+    </div>
+  </div>
+</div><div class="month-panel-big" id="panel-all">
+  <div class="row kpis">
+    <div class="card"><h3>매출</h3><div class="v">2,780,320원</div><div class="sub">123건</div></div>
+    <div class="card cost"><h3>매출원가</h3><div class="v">−656,851</div><div class="sub">23.6% 비중</div></div>
+    <div class="card cost"><h3>채널 수수료</h3><div class="v">−497,440</div><div class="sub">17.9% 비중</div></div>
+    <div class="card cost"><h3>광고비</h3><div class="v">−403,349</div><div class="sub">메타 359,140 + 오하우스 0</div></div>
+    <div class="card op"><h3>영업이익</h3><div class="v">1,222,680원</div><div class="sub">44.0% 마진</div></div>
+  </div>
+
+  <div class="row charts-2col">
+    <div class="card chart-card">
+      <h2>일별 영업이익 추이 (채널별 누적)</h2>
+      <div class="chart-wrap"><canvas id="dailyChart-all"></canvas></div>
+    </div>
+    <div class="card chart-card">
+      <h2>채널별 매출 비중</h2>
+      <div class="chart-wrap"><canvas id="channelDoughnut-all"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card chart-card">
+    <h2>채널별 손익 분해</h2>
+    <table>
+      <thead>
+        <tr><th>채널</th><th>건수</th><th>매출</th><th>매출원가</th><th>수수료</th><th>광고비</th><th>영업이익</th><th>마진</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>오늘의집</td>
+          <td>96</td>
+          <td>2,177,700</td>
+          <td>520,158</td>
+          <td>472,577</td>
+          <td>0</td>
+          <td><b>1,184,965</b></td>
+          <td class="pct">54.4%</td>
+        </tr>
+        <tr>
+          <td>자사몰</td>
+          <td>13</td>
+          <td>328,140</td>
+          <td>72,525</td>
+          <td>11,489</td>
+          <td>339,013</td>
+          <td><b>-94,887</b></td>
+          <td class="pct">-28.9%</td>
+        </tr>
+        <tr>
+          <td>스마트스토어</td>
+          <td>8</td>
+          <td>146,760</td>
+          <td>38,699</td>
+          <td>8,512</td>
+          <td>0</td>
+          <td><b>99,549</b></td>
+          <td class="pct">67.8%</td>
+        </tr>
+        <tr>
+          <td>지그재그</td>
+          <td>2</td>
+          <td>36,000</td>
+          <td>3,570</td>
+          <td>2,700</td>
+          <td>0</td>
+          <td><b>29,730</b></td>
+          <td class="pct">82.6%</td>
+        </tr>
+        <tr>
+          <td>기타</td>
+          <td>3</td>
+          <td>61,760</td>
+          <td>15,136</td>
+          <td>2,162</td>
+          <td>64,335</td>
+          <td><b>-19,873</b></td>
+          <td class="pct">-32.2%</td>
+        </tr>
+        <tr>
+          <td>기타</td>
+          <td>1</td>
+          <td>29,960</td>
+          <td>6,763</td>
+          <td>0</td>
+          <td>0</td>
+          <td><b>23,197</b></td>
+          <td class="pct">77.4%</td>
+        </tr>
+        <tr style="background:#f8f9fa;font-weight:700;">
+          <td>합계</td>
+          <td>123</td>
+          <td>2,780,320</td>
+          <td>656,851</td>
+          <td>497,440</td>
+          <td>403,349</td>
+          <td>1,222,680</td>
+          <td>44.0%</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card chart-card rawdata">
+    <h2>📋 Raw Data — 채널별 일별 상세</h2>
+    <div class="rawdata-scroll">
+      <table class="rawdata-table">
+<tr class="ch-header"><th colspan="33">▌ 자사몰</th></tr><tr class="date-row"><th class="lbl">항목</th><th>05/07</th><th>05/06</th><th>05/05</th><th>05/04</th><th>05/03</th><th>05/02</th><th>05/01</th><th>04/30</th><th>04/29</th><th>04/28</th><th>04/27</th><th>04/26</th><th>04/25</th><th>04/24</th><th>04/23</th><th>04/22</th><th>04/21</th><th>04/20</th><th>04/19</th><th>04/18</th><th>04/17</th><th>04/15</th><th>04/14</th><th>04/13</th><th>04/12</th><th>04/11</th><th>04/10</th><th>04/09</th><th>04/08</th><th>04/07</th><th>04/06</th><th class="total">합계</th></tr><tr><td class="lbl">매출</td><td class="empty"></td><td class="">37,960</td><td class="">29,960</td><td class="">29,960</td><td class="">89,880</td><td class="">89,880</td><td class="empty"></td><td class="">54,460</td><td class="empty"></td><td class="">29,960</td><td class="empty"></td><td class="">16,000</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">23,800</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">18,000</td><td class="empty"></td><td class="total "><b>419,860</b></td></tr><tr><td class="lbl">매출원가</td><td class="empty"></td><td class="">8,263</td><td class="">6,763</td><td class="">6,763</td><td class="">20,289</td><td class="">20,289</td><td class="empty"></td><td class="">13,636</td><td class="empty"></td><td class="">6,763</td><td class="empty"></td><td class="">3,000</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">6,873</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">1,785</td><td class="empty"></td><td class="total "><b>94,424</b></td></tr><tr><td class="lbl">채널 수수료</td><td class="empty"></td><td class="">1,329</td><td class="">1,049</td><td class="empty"></td><td class="">3,147</td><td class="">3,147</td><td class="empty"></td><td class="">1,907</td><td class="empty"></td><td class="">1,049</td><td class="empty"></td><td class="">560</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">833</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">630</td><td class="empty"></td><td class="total "><b>13,651</b></td></tr><tr><td class="lbl">광고비 (메타)</td><td class="">25,283</td><td class="">27,651</td><td class="">35,564</td><td class="">30,843</td><td class="">41,257</td><td class="">26,733</td><td class="">34,287</td><td class="">28,289</td><td class="">31,774</td><td class="">41,815</td><td class="">24,685</td><td class="empty"></td><td class="">2,008</td><td class="">4,535</td><td class="">4,416</td><td class="">4,735</td><td class="">4,562</td><td class="">4,456</td><td class="">5,373</td><td class="">4,735</td><td class="">4,961</td><td class="">4,190</td><td class="">4,083</td><td class="">5,014</td><td class="">5,094</td><td class="">4,456</td><td class="">4,535</td><td class="">4,841</td><td class="">4,682</td><td class="">4,389</td><td class="">4,322</td><td class="total "><b>433,568</b></td></tr><tr><td class="lbl">ROAS</td><td class="empty"></td><td>1.37배</td><td>0.84배</td><td>0.97배</td><td>2.18배</td><td>3.36배</td><td class="empty"></td><td>1.93배</td><td class="empty"></td><td>0.72배</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td>4.43배</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td>4.10배</td><td class="empty"></td><td class="total"><b>0.97배</b></td></tr><tr><td class="lbl">영업이익</td><td class="neg">-25,283</td><td class="pos">717</td><td class="neg">-13,416</td><td class="neg">-7,646</td><td class="pos">25,187</td><td class="pos">39,711</td><td class="neg">-34,287</td><td class="pos">10,628</td><td class="neg">-31,774</td><td class="neg">-19,667</td><td class="neg">-24,685</td><td class="pos">12,440</td><td class="neg">-2,008</td><td class="neg">-4,535</td><td class="neg">-4,416</td><td class="neg">-4,735</td><td class="neg">-4,562</td><td class="neg">-4,456</td><td class="pos">10,721</td><td class="neg">-4,735</td><td class="neg">-4,961</td><td class="neg">-4,190</td><td class="neg">-4,083</td><td class="neg">-5,014</td><td class="neg">-5,094</td><td class="neg">-4,456</td><td class="neg">-4,535</td><td class="neg">-4,841</td><td class="neg">-4,682</td><td class="pos">11,196</td><td class="neg">-4,322</td><td class="total neg"><b>-121,783</b></td></tr><tr><td class="lbl">마진율</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total"><b>-29.0%</b></td></tr><tr><td class="lbl">주문건수</td><td class="empty"></td><td class="">2</td><td class="">1</td><td class="">1</td><td class="">3</td><td class="">3</td><td class="empty"></td><td class="">2</td><td class="empty"></td><td class="">1</td><td class="empty"></td><td class="">2</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">1</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">1</td><td class="empty"></td><td class="total "><b>17</b></td></tr><tr class="ch-header"><th colspan="33">▌ 오늘의집</th></tr><tr class="date-row"><th class="lbl">항목</th><th>05/07</th><th>05/06</th><th>05/05</th><th>05/04</th><th>05/03</th><th>05/02</th><th>05/01</th><th>04/30</th><th>04/29</th><th>04/28</th><th>04/27</th><th>04/26</th><th>04/25</th><th>04/24</th><th>04/23</th><th>04/22</th><th>04/21</th><th>04/20</th><th>04/19</th><th>04/18</th><th>04/17</th><th>04/15</th><th>04/14</th><th>04/13</th><th>04/12</th><th>04/11</th><th>04/10</th><th>04/09</th><th>04/08</th><th>04/07</th><th>04/06</th><th class="total">합계</th></tr><tr><td class="lbl">매출</td><td class="">58,200</td><td class="">52,900</td><td class="">37,100</td><td class="">95,300</td><td class="">58,200</td><td class="">60,900</td><td class="">52,900</td><td class="">29,100</td><td class="">53,200</td><td class="">122,600</td><td class="">131,500</td><td class="">29,400</td><td class="">29,400</td><td class="">31,800</td><td class="">37,400</td><td class="">61,200</td><td class="">58,800</td><td class="">82,600</td><td class="">47,600</td><td class="">29,400</td><td class="">29,400</td><td class="">112,000</td><td class="">66,800</td><td class="">37,400</td><td class="">69,200</td><td class="">138,400</td><td class="">31,800</td><td class="">74,800</td><td class="">143,800</td><td class="">149,400</td><td class="">165,200</td><td class="total "><b>2,177,700</b></td></tr><tr><td class="lbl">매출원가</td><td class="">13,526</td><td class="">13,636</td><td class="">8,263</td><td class="">21,789</td><td class="">13,526</td><td class="">15,136</td><td class="">13,636</td><td class="">6,763</td><td class="">13,636</td><td class="">27,899</td><td class="">28,837</td><td class="">6,763</td><td class="">6,763</td><td class="">8,373</td><td class="">8,263</td><td class="">15,136</td><td class="">13,526</td><td class="">20,399</td><td class="">13,746</td><td class="">6,763</td><td class="">6,763</td><td class="">27,162</td><td class="">15,026</td><td class="">8,263</td><td class="">16,636</td><td class="">33,272</td><td class="">8,373</td><td class="">16,526</td><td class="">35,535</td><td class="">35,425</td><td class="">40,798</td><td class="total "><b>520,158</b></td></tr><tr><td class="lbl">채널 수수료</td><td class="">12,630</td><td class="">11,480</td><td class="">8,051</td><td class="">20,681</td><td class="">12,629</td><td class="">13,216</td><td class="">11,480</td><td class="">6,315</td><td class="">11,545</td><td class="">26,605</td><td class="">28,536</td><td class="">6,380</td><td class="">6,380</td><td class="">6,901</td><td class="">8,116</td><td class="">13,281</td><td class="">12,760</td><td class="">17,925</td><td class="">10,329</td><td class="">6,380</td><td class="">6,380</td><td class="">24,305</td><td class="">14,496</td><td class="">8,116</td><td class="">15,017</td><td class="">30,034</td><td class="">6,901</td><td class="">16,232</td><td class="">31,205</td><td class="">32,421</td><td class="">35,850</td><td class="total "><b>472,577</b></td></tr><tr><td class="lbl">광고비 (오하우스)</td><td class="empty"></td><td class="">7,370</td><td class="">825</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">2,761</td><td class="">3,674</td><td class="">1,848</td><td class="">2,717</td><td class="">2,222</td><td class="">4,422</td><td class="">3,784</td><td class="">2,266</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total "><b>31,889</b></td></tr><tr><td class="lbl">ROAS</td><td class="empty"></td><td>7.18배</td><td>44.97배</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td>19.16배</td><td>7.92배</td><td>28.79배</td><td>45.12배</td><td>59.18배</td><td>6.65배</td><td>7.77배</td><td>14.03배</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total"><b>68.29배</b></td></tr><tr><td class="lbl">영업이익</td><td class="pos">32,044</td><td class="pos">20,414</td><td class="pos">19,961</td><td class="pos">52,830</td><td class="pos">32,045</td><td class="pos">32,548</td><td class="pos">25,023</td><td class="pos">12,348</td><td class="pos">26,171</td><td class="pos">65,379</td><td class="pos">71,905</td><td class="pos">11,835</td><td class="pos">12,473</td><td class="pos">14,260</td><td class="pos">21,021</td><td class="pos">32,783</td><td class="pos">32,514</td><td class="pos">44,276</td><td class="pos">23,525</td><td class="pos">16,257</td><td class="pos">16,257</td><td class="pos">60,533</td><td class="pos">37,278</td><td class="pos">21,021</td><td class="pos">37,547</td><td class="pos">75,094</td><td class="pos">16,526</td><td class="pos">42,042</td><td class="pos">77,060</td><td class="pos">81,554</td><td class="pos">88,552</td><td class="total pos"><b>1,153,076</b></td></tr><tr><td class="lbl">마진율</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total"><b>52.9%</b></td></tr><tr><td class="lbl">주문건수</td><td class="">2</td><td class="">2</td><td class="">2</td><td class="">4</td><td class="">2</td><td class="">3</td><td class="">2</td><td class="">1</td><td class="">2</td><td class="">8</td><td class="">5</td><td class="">1</td><td class="">1</td><td class="">2</td><td class="">2</td><td class="">3</td><td class="">2</td><td class="">3</td><td class="">2</td><td class="">1</td><td class="">1</td><td class="">4</td><td class="">3</td><td class="">2</td><td class="">4</td><td class="">8</td><td class="">2</td><td class="">4</td><td class="">6</td><td class="">6</td><td class="">6</td><td class="total "><b>96</b></td></tr><tr class="ch-header"><th colspan="33">▌ 스마트스토어</th></tr><tr class="date-row"><th class="lbl">항목</th><th>05/07</th><th>05/06</th><th>05/05</th><th>05/04</th><th>05/03</th><th>05/02</th><th>05/01</th><th>04/30</th><th>04/29</th><th>04/28</th><th>04/27</th><th>04/26</th><th>04/25</th><th>04/24</th><th>04/23</th><th>04/22</th><th>04/21</th><th>04/20</th><th>04/19</th><th>04/18</th><th>04/17</th><th>04/15</th><th>04/14</th><th>04/13</th><th>04/12</th><th>04/11</th><th>04/10</th><th>04/09</th><th>04/08</th><th>04/07</th><th>04/06</th><th class="total">합계</th></tr><tr><td class="lbl">매출</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">37,960</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">53,200</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">55,600</td><td class="total "><b>146,760</b></td></tr><tr><td class="lbl">매출원가</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">8,263</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">13,636</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">16,800</td><td class="total "><b>38,699</b></td></tr><tr><td class="lbl">채널 수수료</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">2,202</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">3,085</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">3,225</td><td class="total "><b>8,512</b></td></tr><tr><td class="lbl">광고비</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total "><b>0</b></td></tr><tr><td class="lbl">ROAS</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total empty"></td></tr><tr><td class="lbl">영업이익</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="pos">27,495</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="pos">36,479</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="pos">35,575</td><td class="total pos"><b>99,549</b></td></tr><tr><td class="lbl">마진율</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total"><b>67.8%</b></td></tr><tr><td class="lbl">주문건수</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">2</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">2</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">4</td><td class="total "><b>8</b></td></tr><tr class="ch-header"><th colspan="33">▌ 지그재그</th></tr><tr class="date-row"><th class="lbl">항목</th><th>05/07</th><th>05/06</th><th>05/05</th><th>05/04</th><th>05/03</th><th>05/02</th><th>05/01</th><th>04/30</th><th>04/29</th><th>04/28</th><th>04/27</th><th>04/26</th><th>04/25</th><th>04/24</th><th>04/23</th><th>04/22</th><th>04/21</th><th>04/20</th><th>04/19</th><th>04/18</th><th>04/17</th><th>04/15</th><th>04/14</th><th>04/13</th><th>04/12</th><th>04/11</th><th>04/10</th><th>04/09</th><th>04/08</th><th>04/07</th><th>04/06</th><th class="total">합계</th></tr><tr><td class="lbl">매출</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">18,000</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">18,000</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total "><b>36,000</b></td></tr><tr><td class="lbl">매출원가</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">1,785</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">1,785</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total "><b>3,570</b></td></tr><tr><td class="lbl">채널 수수료</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">1,350</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">1,350</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total "><b>2,700</b></td></tr><tr><td class="lbl">광고비</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total "><b>0</b></td></tr><tr><td class="lbl">ROAS</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total empty"></td></tr><tr><td class="lbl">영업이익</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="pos">14,865</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="pos">14,865</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total pos"><b>29,730</b></td></tr><tr><td class="lbl">마진율</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total"><b>82.6%</b></td></tr><tr><td class="lbl">주문건수</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">1</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="">1</td><td class="empty"></td><td class="empty"></td><td class="empty"></td><td class="total "><b>2</b></td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="footer">MyfunnyValentine · MFV Profit Dashboard · 자동 생성</div>
+
+<script>
+function selectMonth(btn, month) {
+  document.querySelectorAll('.month-tab-big').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.month-panel-big').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  const panel = document.getElementById('panel-' + month);
+  if (panel) panel.classList.add('active');
+}
+
+
+new Chart(document.getElementById('dailyChart-2026-04'), {
+  type: 'bar',
+  data: { labels: ["2026-04-06", "2026-04-07", "2026-04-08", "2026-04-09", "2026-04-10", "2026-04-11", "2026-04-12", "2026-04-13", "2026-04-14", "2026-04-15", "2026-04-17", "2026-04-18", "2026-04-19", "2026-04-20", "2026-04-21", "2026-04-22", "2026-04-23", "2026-04-24", "2026-04-25", "2026-04-26", "2026-04-27", "2026-04-28", "2026-04-29", "2026-04-30"], datasets: [{"label": "\uc624\ub298\uc758\uc9d1", "data": [88552, 81554, 77060, 42042, 16526, 75094, 37547, 21021, 37278, 60533, 16257, 16257, 23525, 44276, 32514, 32783, 21021, 16526, 16257, 16257, 74127, 68096, 28019, 16022], "backgroundColor": "#70AD47"}, {"label": "\uc790\uc0ac\ubab0", "data": [0, -3452, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -4067, 0, -8762, 0, -17270], "backgroundColor": "#5B9BD5"}, {"label": "\uc2a4\ub9c8\ud2b8\uc2a4\ud1a0\uc5b4", "data": [35575, 0, 0, 0, 36479, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "backgroundColor": "#FFC000"}, {"label": "\uc9c0\uadf8\uc7ac\uadf8", "data": [0, 0, 0, 14865, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14865, 0, 0, 0, 0, 0], "backgroundColor": "#ED7D31"}, {"label": "\uae30\ud0c0", "data": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -9077, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "backgroundColor": "#A5A5A5"}] },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    scales: {
+      x: { stacked: true, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 10, font: {size: 11} } },
+      y: { stacked: true, ticks: { callback: v => (v/1000).toFixed(0)+'K', font: {size: 11} } }
+    },
+    plugins: {
+      legend: { position: 'bottom', labels: { font: {size: 12}, padding: 12 } },
+      tooltip: { callbacks: { label: ctx => ctx.dataset.label+': '+ctx.parsed.y.toLocaleString()+'원' } }
+    }
+  }
+});
+
+new Chart(document.getElementById('channelDoughnut-2026-04'), {
+  type: 'doughnut',
+  data: {
+    labels: ["\uc624\ub298\uc758\uc9d1", "\uc790\uc0ac\ubab0", "\uc2a4\ub9c8\ud2b8\uc2a4\ud1a0\uc5b4", "\uc9c0\uadf8\uc7ac\uadf8", "\uae30\ud0c0"],
+    datasets: [{
+      data: [1762200, 118420, 108800, 36000, 23800],
+      backgroundColor: ["#70AD47", "#5B9BD5", "#FFC000", "#ED7D31", "#A5A5A5"],
+      borderWidth: 0,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    cutout: '65%',
+    plugins: {
+      legend: { position: 'bottom', labels: { font: {size: 12}, padding: 12 } },
+      tooltip: { callbacks: { label: ctx => ctx.label+': '+ctx.parsed.toLocaleString()+'원' } }
+    }
+  }
+});
+
+new Chart(document.getElementById('dailyChart-2026-05'), {
+  type: 'bar',
+  data: { labels: ["2026-05-01", "2026-05-02", "2026-05-03", "2026-05-04", "2026-05-05", "2026-05-06", "2026-05-07"], datasets: [{"label": "\uc624\ub298\uc758\uc9d1", "data": [27784, 32548, 32045, 52830, 20786, 27784, 32044], "backgroundColor": "#70AD47"}, {"label": "\uc790\uc0ac\ubab0", "data": [0, -26286, -26286, 0, -8762, 0, 0], "backgroundColor": "#5B9BD5"}, {"label": "\uc2a4\ub9c8\ud2b8\uc2a4\ud1a0\uc5b4", "data": [0, 0, 27495, 0, 0, 0, 0], "backgroundColor": "#FFC000"}, {"label": "\uae30\ud0c0", "data": [0, 0, 0, 0, 0, -10795, 0], "backgroundColor": "#A5A5A5"}, {"label": "\uae30\ud0c0", "data": [0, 0, 0, 23197, 0, 0, 0], "backgroundColor": "#A5A5A5"}] },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    scales: {
+      x: { stacked: true, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 10, font: {size: 11} } },
+      y: { stacked: true, ticks: { callback: v => (v/1000).toFixed(0)+'K', font: {size: 11} } }
+    },
+    plugins: {
+      legend: { position: 'bottom', labels: { font: {size: 12}, padding: 12 } },
+      tooltip: { callbacks: { label: ctx => ctx.dataset.label+': '+ctx.parsed.y.toLocaleString()+'원' } }
+    }
+  }
+});
+
+new Chart(document.getElementById('channelDoughnut-2026-05'), {
+  type: 'doughnut',
+  data: {
+    labels: ["\uc624\ub298\uc758\uc9d1", "\uc790\uc0ac\ubab0", "\uc2a4\ub9c8\ud2b8\uc2a4\ud1a0\uc5b4", "\uae30\ud0c0", "\uae30\ud0c0"],
+    datasets: [{
+      data: [415500, 209720, 37960, 37960, 29960],
+      backgroundColor: ["#70AD47", "#5B9BD5", "#FFC000", "#A5A5A5", "#A5A5A5"],
+      borderWidth: 0,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    cutout: '65%',
+    plugins: {
+      legend: { position: 'bottom', labels: { font: {size: 12}, padding: 12 } },
+      tooltip: { callbacks: { label: ctx => ctx.label+': '+ctx.parsed.toLocaleString()+'원' } }
+    }
+  }
+});
+
+new Chart(document.getElementById('dailyChart-all'), {
+  type: 'bar',
+  data: { labels: ["2026-04-06", "2026-04-07", "2026-04-08", "2026-04-09", "2026-04-10", "2026-04-11", "2026-04-12", "2026-04-13", "2026-04-14", "2026-04-15", "2026-04-17", "2026-04-18", "2026-04-19", "2026-04-20", "2026-04-21", "2026-04-22", "2026-04-23", "2026-04-24", "2026-04-25", "2026-04-26", "2026-04-27", "2026-04-28", "2026-04-29", "2026-04-30", "2026-05-01", "2026-05-02", "2026-05-03", "2026-05-04", "2026-05-05", "2026-05-06", "2026-05-07"], datasets: [{"label": "\uc624\ub298\uc758\uc9d1", "data": [88552, 81554, 77060, 42042, 16526, 75094, 37547, 21021, 37278, 60533, 16257, 16257, 23525, 44276, 32514, 32783, 21021, 16526, 16257, 16257, 74127, 68096, 28019, 16022, 27784, 32548, 32045, 52830, 20786, 27784, 32044], "backgroundColor": "#70AD47"}, {"label": "\uc790\uc0ac\ubab0", "data": [0, -3452, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -4067, 0, -8762, 0, -17270, 0, -26286, -26286, 0, -8762, 0, 0], "backgroundColor": "#5B9BD5"}, {"label": "\uc2a4\ub9c8\ud2b8\uc2a4\ud1a0\uc5b4", "data": [35575, 0, 0, 0, 36479, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 27495, 0, 0, 0, 0], "backgroundColor": "#FFC000"}, {"label": "\uc9c0\uadf8\uc7ac\uadf8", "data": [0, 0, 0, 14865, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14865, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "backgroundColor": "#ED7D31"}, {"label": "\uae30\ud0c0", "data": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -9077, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -10795, 0], "backgroundColor": "#A5A5A5"}, {"label": "\uae30\ud0c0", "data": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 23197, 0, 0, 0], "backgroundColor": "#A5A5A5"}] },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    scales: {
+      x: { stacked: true, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 10, font: {size: 11} } },
+      y: { stacked: true, ticks: { callback: v => (v/1000).toFixed(0)+'K', font: {size: 11} } }
+    },
+    plugins: {
+      legend: { position: 'bottom', labels: { font: {size: 12}, padding: 12 } },
+      tooltip: { callbacks: { label: ctx => ctx.dataset.label+': '+ctx.parsed.y.toLocaleString()+'원' } }
+    }
+  }
+});
+
+new Chart(document.getElementById('channelDoughnut-all'), {
+  type: 'doughnut',
+  data: {
+    labels: ["\uc624\ub298\uc758\uc9d1", "\uc790\uc0ac\ubab0", "\uc2a4\ub9c8\ud2b8\uc2a4\ud1a0\uc5b4", "\uc9c0\uadf8\uc7ac\uadf8", "\uae30\ud0c0", "\uae30\ud0c0"],
+    datasets: [{
+      data: [2177700, 328140, 146760, 36000, 61760, 29960],
+      backgroundColor: ["#70AD47", "#5B9BD5", "#FFC000", "#ED7D31", "#A5A5A5", "#A5A5A5"],
+      borderWidth: 0,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    cutout: '65%',
+    plugins: {
+      legend: { position: 'bottom', labels: { font: {size: 12}, padding: 12 } },
+      tooltip: { callbacks: { label: ctx => ctx.label+': '+ctx.parsed.toLocaleString()+'원' } }
+    }
+  }
+});
+
+</script>
+</body>
+</html>
